@@ -52,7 +52,7 @@ public class mainfunction {
                     break;
                 case 3:
                     request req = new request();
-                    req.req();
+                    req.manageRequests();
                     break;
                 case 4:
                     approval apv = new approval();
