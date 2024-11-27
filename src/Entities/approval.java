@@ -3,11 +3,11 @@ package Entities;
 import Main.config;
 import java.util.Scanner;
 
-public class approval {
-    config db = new config();
-    Scanner sc = new Scanner(System.in);
-    citizen ct = new citizen();
-    request rq = new request();
+    public class approval {
+        config db = new config();
+        Scanner sc = new Scanner(System.in);
+        citizen ct = new citizen();
+        request rq = new request();
     public void approve() {
         boolean res = true;
 
@@ -19,29 +19,31 @@ public class approval {
             System.out.println("2. Reject a Request");
             System.out.println("3. Generate General Report");
             System.out.println("4. Generate Individual Report");
-            System.out.println("5. Exit");
+            System.out.println("5. Type 'exit' or 'e' to Exit");
             System.out.println("-------------------------------------");
 
             System.out.print("Enter Action: ");
-            int choice = getIntInput();
+            String choice = sc.nextLine().trim().toLowerCase();  // Accept input as a string
 
+            if ("exit".equals(choice) || "e".equals(choice)) {
+                res = false;  // Exit the loop if the user types 'exit' or 'e'
+                break;
+            }
+
+            // Process numerical inputs for actions
             switch (choice) {
-                case 1:
+                case "1":
                     updateRequestStatus("Approved");
                     break;
-                case 2:
+                case "2":
                     updateRequestStatus("Rejected");
                     break;
-                case 3:
+                case "3":
                     generateFilteredGeneralReport();
                     break;
-                case 4:
+                case "4":
                     generateIndividualReport();
                     break;
-                case 5:
-                    res = false;
-                    break;
-                
                 default:
                     System.out.println("Invalid Input. Please choose a valid option.");
                     break;
@@ -49,48 +51,53 @@ public class approval {
         } while (res);
     }
 
-        private void updateRequestStatus(String newStatus) {
-            System.out.println("\n" + newStatus.toUpperCase() + " REQUEST(S)\n");
-            rq.viewRequests();
-            String requestIdsInput = "";
-            boolean validIds = false;
+    private void updateRequestStatus(String newStatus) {
+        System.out.println("\n" + newStatus.toUpperCase() + " REQUEST(S)\n");
+        rq.viewRequests();
+        String requestIdsInput = "";
+        boolean validIds = false;
 
-            while (!validIds) {
-                System.out.print("Enter Request IDs to " + newStatus.toLowerCase() + " (separate by commas or spaces): ");
-                requestIdsInput = sc.nextLine().trim();
+        while (!validIds) {
+            System.out.print("Enter Request IDs to " + newStatus.toLowerCase() + " (separate by commas or spaces), or type 'exit' to cancel: ");
+            requestIdsInput = sc.nextLine().trim().toLowerCase();
 
-                // Split the input by spaces or commas to get individual IDs
-                String[] requestIds = requestIdsInput.split("[,\\s]+");
+            if ("exit".equals(requestIdsInput) || "e".equals(requestIdsInput)) {
+                System.out.println("Action canceled. Returning to main menu.");
+                return;  // Exit the update process and return to the main menu
+            }
 
-                // Check if all entered IDs are valid
-                validIds = true;
-                for (String reqId : requestIds) {
-                    if (!reqIdExists(reqId)) {
-                        System.out.println("Invalid Request ID: " + reqId + ". Please try again.");
-                        validIds = false;
-                        break;
-                    }
+            // Split the input by spaces or commas to get individual IDs
+            String[] requestIds = requestIdsInput.split("[,\\s]+");
 
-                    // Check if the request is already approved or rejected
-                    String currentStatus = getRequestStatus(reqId);
-                    if (currentStatus.equals("Approved") || currentStatus.equals("Rejected")) {
-                        System.out.println("Request ID " + reqId + " is already " + currentStatus + ". Cannot modify.");
-                        validIds = false;
-                        break;
-                    }
+            // Check if all entered IDs are valid
+            validIds = true;
+            for (String reqId : requestIds) {
+                if (!reqIdExists(reqId)) {
+                    System.out.println("Invalid Request ID: " + reqId + ". Please try again.");
+                    validIds = false;
+                    break;
                 }
 
-                if (!validIds) {
-                    System.out.println("One or more invalid Request IDs or already approved/rejected. Please enter again.");
+                // Check if the request is already approved or rejected
+                String currentStatus = getRequestStatus(reqId);
+                if (currentStatus.equals("Approved") || currentStatus.equals("Rejected")) {
+                    System.out.println("Request ID " + reqId + " is already " + currentStatus + ". Cannot modify.");
+                    validIds = false;
+                    break;
                 }
             }
-            String query = "UPDATE tbl_request SET req_status = ? WHERE req_id = ?";
-            for (String requestId : requestIdsInput.split("[,\\s]+")) {
-                db.updateRecord(query, newStatus, requestId);  // Execute the update for each request ID
-                System.out.println("Request ID " + requestId + " has been " + newStatus.toLowerCase() + " successfully.");
+
+            if (!validIds) {
+                System.out.println("One or more invalid Request IDs or already approved/rejected. Please enter again.");
             }
         }
 
+        // Execute the update for each request ID
+        for (String requestId : requestIdsInput.split("[,\\s]+")) {
+            db.updateRecord("UPDATE tbl_request SET req_status = ? WHERE req_id = ?", newStatus, requestId);
+            System.out.println("Request ID " + requestId + " has been " + newStatus.toLowerCase() + " successfully.");
+        }
+    }
 
 
     public void generateFilteredGeneralReport() {
